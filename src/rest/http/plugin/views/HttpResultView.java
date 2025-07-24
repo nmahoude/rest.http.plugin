@@ -13,6 +13,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.part.ViewPart;
@@ -40,9 +41,13 @@ public class HttpResultView extends ViewPart {
 
 	@Override
 	public void createPartControl(Composite parent) {
-		tabFolder = new CTabFolder(parent, SWT.BORDER);
+		tabFolder = new CTabFolder(parent, SWT.BORDER | SWT.FLAT);
+		tabFolder.setSimple(true); // Pour avoir un rendu à la Eclipse (onglet moderne)
 		tabFolder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		tabFolder.setSelectionBackground(Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT));
+		tabFolder.setSelectionForeground(Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_FOREGROUND));
 
+		
 		// Request Tab
 		CTabItem requestTab = new CTabItem(tabFolder, SWT.NONE);
 		requestTab.setText("Requête");
