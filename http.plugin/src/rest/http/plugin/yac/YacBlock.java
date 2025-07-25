@@ -2,29 +2,36 @@ package rest.http.plugin.yac;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import rest.http.plugin.request.RequestData;
 
 public class YacBlock {
-	public int startingLine;
-	public int endLine;
+	public final YacDocument parent;
+	public final int startingLine;
+	public final int endLine;
+	public final String content;
 
 	public int verbLine;
-	public String content;
 	RequestData data = new RequestData();
 	
 	boolean validRequest = false;
 	
-	public YacBlock(int start, int end, String content) {
-
+	public YacBlock(YacDocument parent, int start, int end, String content) {
+		this.parent = parent;
 		this.startingLine = start;
 		this.endLine = end;
 		this.content = content;
+		init();
 	}
 	
-	void init(Map<String, String> variables) {
+	void init() {
+		Map<String, String> variables = new HashMap<>();
+		variables.putAll(parent.variables); // add parent variables
+		variables.putAll(extractVariables()); // overload with ours
+		
 		if (content == null || content== null || content.isEmpty()) {
 			error();
 			return;
@@ -160,24 +167,29 @@ public class YacBlock {
 	  
 	  // Passer toutes les lignes en revue
 	  for (String line : lines) {
-	  	if (line.trim().startsWith("@")) {
-	  		// extract variable as yac format
-	  		String[] parts = line.trim().split("=", 2);
-	  		if (parts.length == 2) {
-	  			String key = parts[0].trim().substring(1); // remove @
-	  			String value = parts[1].trim();
-	  			if (!key.isEmpty() && !value.isEmpty()) {
-	  				variables.put(key, value);
-	  			}
-	  		} else if (parts.length == 1) {
-	  			// just a variable name, no value
-	  			String key = parts[0].trim();
-	  			if (!key.isEmpty()) {
-	  				variables.put(key, "");
-	  			}
-	  		}
-	  	}
+	  	extractVariable(variables, line);
 	  }
 	  return variables;
+	}
+
+	private void extractVariable(Map<String, String> variables, String line) {
+		if (line.trim().startsWith("@")) {
+			// extract variable as yac format
+			String[] parts = line.trim().split("=", 2);
+			if (parts.length == 2) {
+				String key = parts[0].trim().substring(1); // remove @
+				String value = replaceVariables(parts[1].trim(), parent.variables); // replace from parent
+				value = replaceVariables(parts[1].trim(), variables); // replace from this
+				if (!key.isEmpty() && !value.isEmpty()) {
+					variables.put(key, value);
+				}
+			} else if (parts.length == 1) {
+				// just a variable name, no value
+				String key = parts[0].trim();
+				if (!key.isEmpty()) {
+					variables.put(key, "");
+				}
+			}
+		}
 	}
 }

@@ -5,16 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import rest.http.plugin.request.JsonPrettyPrinter;
+
 class YacBlockTest {
-	
+		YacDocument document = new YacDocument();
+		
     @Test
     void testSimpleBlock() {
-    	YacBlock block = new YacBlock(0, 7, 
+    	YacBlock block = new YacBlock(document, 0, 7, 
         		"""
         		GET https://example.com
         		Header: value
         		""");
-        
         var result = block.request();
         assertEquals(result.method, "GET");
         assertEquals(result.url, "https://example.com");
@@ -25,7 +27,7 @@ class YacBlockTest {
     
     @Test
 		void withoutVerbSetGET() {
-    	YacBlock block = new YacBlock(0, 7, 
+    	YacBlock block = new YacBlock(document, 0, 7, 
     		  """
       		https://example.com
       		""");
@@ -37,7 +39,7 @@ class YacBlockTest {
     
     @Test
     void withBody() {
-        YacBlock block = new YacBlock(5, 6, 
+        YacBlock block = new YacBlock(document, 5, 6, 
         """
         		### Request with body
         		GET https://example.com
@@ -52,9 +54,7 @@ class YacBlockTest {
         assertEquals("https://example.com", result.url);
         assertEquals(
         		"""
-        		{
-        		"key": "value"
-        		}
-        		""".strip(), result.body.strip());
+        		{"key": "value"}
+        		""".strip(), JsonPrettyPrinter.prettyPrint(result.body));
     }
 }

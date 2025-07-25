@@ -14,7 +14,7 @@ public class HttpYacParser {
 	
 	
     // Parse all requests in the document and return a list of HttpYac
-    public List<YacBlock> parse(IDocument document) {
+    public List<YacBlock> parse(YacDocument doc, IDocument document) {
         List<String> lines = new ArrayList<>();
         try {
             int lineCount = document.getNumberOfLines();
@@ -27,10 +27,10 @@ public class HttpYacParser {
         } catch (Exception e) {
             // Handle exception or log
         }
-        return parseLines(lines);
+        return parseLines(doc, lines);
     }
     
-    public List<YacBlock> parseLines(List<String> lines) {
+    public List<YacBlock> parseLines(YacDocument doc, List<String> lines) {
         List<YacBlock> blocks = new ArrayList<>();
         try {
             StringBuilder currentBlock = new StringBuilder();
@@ -43,7 +43,7 @@ public class HttpYacParser {
                 	if (verbs.stream().anyMatch(line::startsWith)) hasVerb = true; // on marque qu'on a vu un verbe 
                 	
                     if (inBlock && currentBlock.length() > 0) {
-                        YacBlock block = new YacBlock(blockStartLine, i - 1, currentBlock.toString().trim());
+                        YacBlock block = new YacBlock(doc, blockStartLine, i - 1, currentBlock.toString().trim());
                         blocks.add(block);
                         currentBlock.setLength(0);
                         hasVerb = false; // Reset verb flag for new block
@@ -61,7 +61,7 @@ public class HttpYacParser {
             }
             // Add last block if present
             if (inBlock && currentBlock.length() > 0) {
-                YacBlock block = new YacBlock(blockStartLine, lines.size()-1, currentBlock.toString().trim());
+                YacBlock block = new YacBlock(doc, blockStartLine, lines.size()-1, currentBlock.toString().trim());
                 blocks.add(block);
             }
         } catch (Exception e) {

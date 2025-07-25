@@ -15,11 +15,11 @@ public class YacDocument {
 	public void load(IDocument document) {
 		blocks.clear();
 		HttpYacParser parser = new HttpYacParser();
-		List<YacBlock> parsedBlocks = parser.parse(document);
+		List<YacBlock> parsedBlocks = parser.parse(this, document);
 
 
 		for (YacBlock block : parsedBlocks) {
-			block.init(variables);
+			block.init();
 			
 			if (!block.isValidRequest() && block == parsedBlocks.get(0)) {
 				variables.putAll(block.extractVariables());

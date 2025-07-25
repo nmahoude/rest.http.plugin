@@ -18,7 +18,7 @@ class HttpYacParserTest {
 				""";
 
 		HttpYacParser parser = new HttpYacParser();
-		List<YacBlock> requests = parser.parseLines(toLines(input));
+		List<YacBlock> requests = parser.parseLines(null, toLines(input));
 
 		Assertions.assertEquals(requests.size(), 1);
 		var req = requests.get(0);
@@ -47,7 +47,7 @@ class HttpYacParserTest {
 				""";
 
 		HttpYacParser parser = new HttpYacParser();
-		List<YacBlock> requests = parser.parseLines(toLines(input));
+		List<YacBlock> requests = parser.parseLines(null, toLines(input));
 
 		assertEquals(requests.size(), 3);
 		var req1 = requests.get(0);
