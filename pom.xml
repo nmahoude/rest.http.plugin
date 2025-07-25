@@ -67,7 +67,8 @@
       <file>target-platform.target</file>
     </target>
      <!-- Optional set the Java version you are using-->
-    <executionEnvironment>JavaSE-17</executionEnvironment>-->
+    <executionEnvironment>JavaSE-17</executionEnvironment>
+    
      <environments>
       <environment>
        <os>linux</os>

@@ -47,6 +47,7 @@ public class Activator extends AbstractUIPlugin {
 		
 		IPreferenceStore store = getPreferenceStore();
     FontData[] fontData = PreferenceConverter.getFontDataArray(store, HttpPreferencePage.FONT_ID);
+    
     JFaceResources.getFontRegistry().put(HttpPreferencePage.FONT_ID, fontData);
     
     handleFileChange();

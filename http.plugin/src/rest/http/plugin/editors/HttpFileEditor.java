@@ -26,18 +26,19 @@ import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.internal.texteditor.AnnotationColumn;
 
 import rest.http.plugin.HttpPreferencePage;
-import rest.http.plugin.request.HttpYacExtractor;
 import rest.http.plugin.request.RequestData;
 import rest.http.plugin.request.RequestExecutor;
 import rest.http.plugin.request.ResponseData;
 import rest.http.plugin.views.HttpResultView;
+import rest.http.plugin.yac.YacBlock;
+import rest.http.plugin.yac.YacDocument;
 
 public class HttpFileEditor extends TextEditor {
 	private static final String HTTP_ANNOTATION = "rest.http.plugin.ExecuteAnnotation";
 	private static final String HTTP_ANNOTATION_INLINE = "rest.http.plugin.inlineHttpAnnotation";
 	
 
-	private final HttpYacExtractor yacExtractor = new HttpYacExtractor();
+	private final YacDocument yac= new YacDocument();
 	
 	private RequestData requestData = new RequestData();
 	private ResponseData responseData = new ResponseData();
@@ -68,7 +69,7 @@ public class HttpFileEditor extends TextEditor {
     doc.addDocumentListener(new IDocumentListener() {
         @Override
         public void documentChanged(DocumentEvent event) {
-            yacExtractor.refreshDoc(event.getDocument());
+            yac.load(event.getDocument());
         		updateHttpAnnotations();
         }
 
@@ -98,7 +99,7 @@ public class HttpFileEditor extends TextEditor {
 									|| lineText.startsWith("PUT")) {
 								
 								
-								var result = yacExtractor.extract(document, line);
+								var result = yac.getAt(line);
 								
 								executeRequest(result);
 							}
@@ -129,27 +130,39 @@ public class HttpFileEditor extends TextEditor {
     }
 
     // Scanne le document
-    try {
-        int lines = document.getNumberOfLines();
-        for (int i = 0; i < lines; i++) {
-            String lineText = document.get(document.getLineOffset(i), document.getLineLength(i)).trim();
-            if (lineText.startsWith("GET") 
-            		|| lineText.startsWith("POST") 
-            		|| lineText.startsWith("DELETE") 
-            		|| lineText.startsWith("PUT")
-            		) {
-                int offset = document.getLineOffset(i);
-                //Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "Run HTTP request");
-                
-                Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "[Executer]");
-                offset = document.getLineOffset(i) + document.getLineLength(i) - 1;
-                model.addAnnotation(annotation, new Position(offset, 0));
-            }
-        }
-    } catch (BadLocationException e) {
-      // TODO : better
-  		e.printStackTrace();
-    }
+    yac.load(document);
+    for (YacBlock block : yac.blocks) {
+				if (block.isValid()) {
+						try {
+								int offset = document.getLineOffset(block.startingLine+block.verbLine);
+								Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "[Executer]");
+								model.addAnnotation(annotation, new Position(offset, 0));
+						} catch (BadLocationException e) {
+								e.printStackTrace();
+						}
+				}
+		}
+//    try {
+//        int lines = document.getNumberOfLines();
+//        for (int i = 0; i < lines; i++) {
+//            String lineText = document.get(document.getLineOffset(i), document.getLineLength(i)).trim();
+//            if (lineText.startsWith("GET") 
+//            		|| lineText.startsWith("POST") 
+//            		|| lineText.startsWith("DELETE") 
+//            		|| lineText.startsWith("PUT")
+//            		) {
+//                int offset = document.getLineOffset(i);
+//                //Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "Run HTTP request");
+//                
+//                Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "[Executer]");
+//                offset = document.getLineOffset(i) + document.getLineLength(i) - 1;
+//                model.addAnnotation(annotation, new Position(offset, 0));
+//            }
+//        }
+//    } catch (BadLocationException e) {
+//      // TODO : better
+//  		e.printStackTrace();
+//    }
 	}
 	
 	public void executeRequest(RequestData requestData) {

@@ -20,19 +20,31 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import rest.http.plugin.Activator;
+import rest.http.plugin.HttpPreferencePage;
+
 public class RequestExecutor {
 	
 	public ResponseData execute(RequestData requestData) {
 		try {
 			
-			String proxyHost = "127.0.0.1";
-      int proxyPort = 3128; // exemple : Tor
+			String proxyHost = Activator.getDefault().getPreferenceStore().getString(HttpPreferencePage.SOCKS_PROXY_HOST_ID);
+			int proxyPort = Activator.getDefault().getPreferenceStore().getInt(HttpPreferencePage.SOCKS_PROXY_PORT_ID);
+			
+			// proxyHost = "127.0.0.1";
+      //proxyPort = 3128; // exemple : Tor
 
       disableSSLVerification();
       
-      Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort));
       URL url = new URL(requestData.url);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection(proxy);
+      HttpURLConnection connection;
+      if (!requestData.noProxy || (proxyHost != null && !proxyHost.isEmpty() && proxyPort > 0)) {
+      	Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort));
+				connection = (HttpURLConnection) url.openConnection(proxy);
+      } else {
+				connection = (HttpURLConnection) url.openConnection();
+      }
+      
       connection.setRequestMethod(requestData.method.trim());
       connection.setDoOutput(true);
       connection.setConnectTimeout(1000);
