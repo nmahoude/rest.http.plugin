@@ -1,6 +1,7 @@
 package rest.http.plugin.yac;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +18,13 @@ public class YacBlock {
 	boolean validRequest = false;
 	
 	public YacBlock(int start, int end, String content) {
+
 		this.startingLine = start;
 		this.endLine = end;
 		this.content = content;
-		
+	}
+	
+	void init(Map<String, String> variables) {
 		if (content == null || content== null || content.isEmpty()) {
 			error();
 			return;
@@ -34,8 +38,8 @@ public class YacBlock {
 	  
 	  // Passer toutes les lignes vides et les commentaires
 	  int current = 0;
-	  while (lines[current].trim().isEmpty() || lines[current].trim().startsWith("#") || lines[current].trim().startsWith("/")) {
-	    String line = lines[current].trim();
+	  while (current < lines.length && (lines[current].trim().isEmpty() || lines[current].trim().startsWith("#") || lines[current].trim().startsWith("/"))) {
+	    String line = replaceVariables(lines[current], variables);
 	    if (line.contains("@no-proxy")) {
 	    	data.noProxy = true;
 	    }
@@ -44,20 +48,28 @@ public class YacBlock {
 	    }
 	  	current++;
 	  }
+	  if (current >= lines.length) {
+	  	error();
+	  	return;
+	  }
 	  
-	  String firstLine = lines[current].trim();
+	  String firstLine = replaceVariables(lines[current], variables);
 	  if (firstLine.isEmpty()) {
 	  	error();
 	  	return;
 	  }
 
 	  extractMethodAndUrl(data, firstLine);
+	  if (!validRequest) {
+	  	error(data);
+	  	return;
+	  }
 	  verbLine = current;
 	  current++;
 	  
 	  Map<String, List<String>> headers = new java.util.HashMap<>();
 		for (; current < lines.length; ) {
-      String line = lines[current++].trim();
+      String line = replaceVariables(lines[current++], variables);;
 			if (line.isEmpty()) {
 				break; // Skip empty lines and comments
 			}
@@ -73,10 +85,19 @@ public class YacBlock {
 	  
 	  StringBuilder body = new StringBuilder();
 	  for (; current < lines.length; current++) {
-      String line = lines[current].trim();
+      String line = replaceVariables(lines[current], variables);
       body.append(line).append("\n");
 	  }
 	  data.body = body.toString().trim();
+	}
+
+	private String replaceVariables(String content, Map<String, String> variables) {
+		for (Map.Entry<String, String> entry : variables.entrySet()) {
+			String key = "{{" + entry.getKey()+ "}}";
+			String value = entry.getValue();
+			content = content.replace(key, value);
+		}
+		return content;
 	}
 
 	public RequestData request() {
@@ -125,7 +146,38 @@ public class YacBlock {
 		requestData.url = message;
 	}
 
-	public boolean isValid() {
+	public boolean isValidRequest() {
 		return validRequest;
+	}
+
+	public Map<String, String> extractVariables() {
+		Map<String, String> variables = new java.util.HashMap<>();
+		
+		String[] lines = content.split("\\r?\\n");
+	  if (lines.length == 0) {
+	  	return Collections.emptyMap();
+	  }
+	  
+	  // Passer toutes les lignes en revue
+	  for (String line : lines) {
+	  	if (line.trim().startsWith("@")) {
+	  		// extract variable as yac format
+	  		String[] parts = line.trim().split("=", 2);
+	  		if (parts.length == 2) {
+	  			String key = parts[0].trim().substring(1); // remove @
+	  			String value = parts[1].trim();
+	  			if (!key.isEmpty() && !value.isEmpty()) {
+	  				variables.put(key, value);
+	  			}
+	  		} else if (parts.length == 1) {
+	  			// just a variable name, no value
+	  			String key = parts[0].trim();
+	  			if (!key.isEmpty()) {
+	  				variables.put(key, "");
+	  			}
+	  		}
+	  	}
+	  }
+	  return variables;
 	}
 }
