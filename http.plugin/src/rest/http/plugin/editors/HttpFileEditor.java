@@ -132,7 +132,7 @@ public class HttpFileEditor extends TextEditor {
     // Scanne le document
     yac.load(document);
     for (YacBlock block : yac.blocks) {
-				if (block.isValid()) {
+				if (block.isValidRequest()) {
 						try {
 								int offset = document.getLineOffset(block.startingLine+block.verbLine);
 								Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "[Executer]");
