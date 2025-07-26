@@ -66,6 +66,7 @@ public class HttpYacParser {
             }
         } catch (Exception e) {
             // Handle exception or log
+        	e.printStackTrace();
         }
         return blocks;
     }
