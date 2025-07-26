@@ -38,6 +38,8 @@ public class HttpResultView extends ViewPart {
 	private CTabFolder tabFolder;
 	private Button playButton;
 
+	private Button proxyCheckbox;
+
 	@Override
 	public void createPartControl(Composite parent) {
 		tabFolder = new CTabFolder(parent, SWT.BORDER | SWT.FLAT);
@@ -60,6 +62,10 @@ public class HttpResultView extends ViewPart {
 		methodCombo.setItems(new String[] {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"});
 		methodCombo.select(0); // Default to GET
 		methodCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		proxyCheckbox = new Button(requestComposite, SWT.CHECK);
+		proxyCheckbox.setText("Utiliser le proxy");
+		proxyCheckbox.setSelection(false); // Default unchecked
+		proxyCheckbox.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		// Empty label for grid alignment
 		new Label(requestComposite, SWT.NONE);
 
@@ -134,12 +140,15 @@ public class HttpResultView extends ViewPart {
 	// Setters for updating fields
 	public void setRequest(RequestData requestData) {
 		this.currentRequest = requestData;
+		
+		proxyCheckbox.setSelection(!requestData.noProxy);
+		
 		if (methodCombo != null && !methodCombo.isDisposed()) {
 			int idx = methodCombo.indexOf(requestData.method);
 			methodCombo.select(idx >= 0 ? idx : 0);
 		}
 		if (urlField != null && !urlField.isDisposed())
-			urlField.setText(requestData.url);
+			urlField.setText(requestData.url.toString());
 		if (requestHeadersField != null && !requestHeadersField.isDisposed()) {
 			StringBuilder headersBuilder = new StringBuilder();
 			requestData.headers.forEach((key, values) -> {

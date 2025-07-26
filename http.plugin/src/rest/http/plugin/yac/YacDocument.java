@@ -19,7 +19,12 @@ public class YacDocument {
 
 
 		for (YacBlock block : parsedBlocks) {
-			block.init();
+			try {
+				block.init();
+			} catch(Exception e) {
+				e.printStackTrace();
+				continue;
+			}
 			
 			if (!block.isValidRequest() && block == parsedBlocks.get(0)) {
 				variables.putAll(block.extractVariables());

@@ -25,20 +25,23 @@ import rest.http.plugin.HttpPreferencePage;
 
 public class RequestExecutor {
 	
+	
 	public ResponseData execute(RequestData requestData) {
 		try {
 			
 			String proxyHost = Activator.getDefault().getPreferenceStore().getString(HttpPreferencePage.SOCKS_PROXY_HOST_ID);
 			int proxyPort = Activator.getDefault().getPreferenceStore().getInt(HttpPreferencePage.SOCKS_PROXY_PORT_ID);
 			
-			// proxyHost = "127.0.0.1";
-      //proxyPort = 3128; // exemple : Tor
-
       disableSSLVerification();
       
-      URL url = new URL(requestData.url);
+      
+      URL url = requestData.url();
       HttpURLConnection connection;
-      if (!requestData.noProxy || (proxyHost != null && !proxyHost.isEmpty() && proxyPort > 0)) {
+      
+      boolean useProxy = true;
+      if (proxyHost == null || proxyHost.isEmpty() || proxyPort <= 0) useProxy = false; // Pas de proxy configuré
+      
+      if (requestData.useProxy()) {
       	Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort));
 				connection = (HttpURLConnection) url.openConnection(proxy);
       } else {

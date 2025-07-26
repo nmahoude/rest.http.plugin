@@ -18,18 +18,20 @@ public class YacBlock {
 	RequestData data = new RequestData();
 	
 	boolean validRequest = false;
+	private Map<String, String> variables = new HashMap<>();
 	
 	public YacBlock(YacDocument parent, int start, int end, String content) {
 		this.parent = parent;
 		this.startingLine = start;
 		this.endLine = end;
 		this.content = content;
+		
 		init();
 	}
 	
 	void init() {
-		Map<String, String> variables = new HashMap<>();
-		variables.putAll(parent.variables); // add parent variables
+		variables.clear();
+		if (parent != null) variables.putAll(parent.variables); // add parent variables
 		variables.putAll(extractVariables()); // overload with ours
 		
 		if (content == null || content== null || content.isEmpty()) {
@@ -46,8 +48,8 @@ public class YacBlock {
 	  // Passer toutes les lignes vides et les commentaires
 	  int current = 0;
 	  while (current < lines.length && (lines[current].trim().isEmpty() || lines[current].trim().startsWith("#") || lines[current].trim().startsWith("/"))) {
-	    String line = replaceVariables(lines[current], variables);
-	    if (line.contains("@no-proxy")) {
+	    String line = resolveVariables(lines[current]);
+	    if (line.contains("@no-proxy") || variables.containsKey("no-proxy")) {
 	    	data.noProxy = true;
 	    }
 	    if (line.contains("@proxy")) {
@@ -60,7 +62,7 @@ public class YacBlock {
 	  	return;
 	  }
 	  
-	  String firstLine = replaceVariables(lines[current], variables);
+	  String firstLine = resolveVariables(lines[current]);
 	  if (firstLine.isEmpty()) {
 	  	error();
 	  	return;
@@ -76,7 +78,7 @@ public class YacBlock {
 	  
 	  Map<String, List<String>> headers = new java.util.HashMap<>();
 		for (; current < lines.length; ) {
-      String line = replaceVariables(lines[current++], variables);;
+      String line = resolveVariables(lines[current++]);
 			if (line.isEmpty()) {
 				break; // Skip empty lines and comments
 			}
@@ -92,13 +94,13 @@ public class YacBlock {
 	  
 	  StringBuilder body = new StringBuilder();
 	  for (; current < lines.length; current++) {
-      String line = replaceVariables(lines[current], variables);
+      String line = resolveVariables(lines[current]);
       body.append(line).append("\n");
 	  }
 	  data.body = body.toString().trim();
 	}
 
-	private String replaceVariables(String content, Map<String, String> variables) {
+	private String resolveVariables(String content) {
 		for (Map.Entry<String, String> entry : variables.entrySet()) {
 			String key = "{{" + entry.getKey()+ "}}";
 			String value = entry.getValue();
@@ -116,7 +118,7 @@ public class YacBlock {
 	  if (parts.length == 3) {
 	  	// On a un verbe, une url et un protocole
 	  	requestData.method = parts[0].trim();
-	  	requestData.url = parts[1].trim();
+	  	requestData.url = resolveVariables(parts[1].trim());
 	  	if (parts[2].trim().equalsIgnoreCase("HTTP/2") || parts[2].trim().equalsIgnoreCase("HTTP/2.0")) {
 	  		requestData.http2 = true;
 	  	} else {
@@ -126,14 +128,14 @@ public class YacBlock {
 	  else if (parts.length < 2) {
 	  	if (parts[0].trim().startsWith("http")) {
 		  	requestData.method = "GET";
-		  	requestData.url = parts[0].trim();
+		  	requestData.url = resolveVariables(parts[0].trim());
 	  	} else {
 	  		error(requestData);
 	  		return;
 	  	}
 	  } else {
 	  	requestData.method = parts[0];
-	  	requestData.url = parts[1];
+	  	requestData.url = resolveVariables(parts[1]);
 	  }
 	  
 	  validRequest = true;
@@ -150,7 +152,7 @@ public class YacBlock {
 	private void error(RequestData requestData, String message) {
 		this.validRequest = false;
 		requestData.method = "GET";
-		requestData.url = message;
+		requestData.url = "error://"+message;
 	}
 
 	public boolean isValidRequest() {
@@ -178,8 +180,8 @@ public class YacBlock {
 			String[] parts = line.trim().split("=", 2);
 			if (parts.length == 2) {
 				String key = parts[0].trim().substring(1); // remove @
-				String value = replaceVariables(parts[1].trim(), parent.variables); // replace from parent
-				value = replaceVariables(parts[1].trim(), variables); // replace from this
+				String value = resolveVariables(parts[1].trim()); // replace from parent
+				value = resolveVariables(parts[1].trim()); // replace from this
 				if (!key.isEmpty() && !value.isEmpty()) {
 					variables.put(key, value);
 				}
