@@ -30,29 +30,29 @@ import rest.http.plugin.request.ResponseData;
 public class HttpResultView extends ViewPart {
 	public static final String ID = "rest.http.plugin.views.HttpResultView";
 
+	private final Image playImage;
+
 	private RequestData currentRequest;
 	private ResponseData currentResponse;
 
+	private CTabFolder tabFolder;
 	private Combo methodCombo;
 	private Text urlField;
+	private Button playButton;
+	private Button proxyCheckbox;
+	private Label headersLabel;
 	private Text requestHeadersField;
 	private Text requestBodyField;
-	private Text responseBodyField;
+
+
+
 	private Text responseCodeField;
-
-	private CTabFolder tabFolder;
-	private Button playButton;
-
-	private Button proxyCheckbox;
 	private Text responseDurationField;
 	private Text responseSizeField;
-
-	private final Image playImage;
-
-	private Label headersLabel;
-
 	private Label responseHeadersLabel;
 	private Table responseHeadersTable;
+	private Text responseBodyField;
+
 
 	public HttpResultView() {
 		createResourceManager();
@@ -105,8 +105,8 @@ public class HttpResultView extends ViewPart {
 		new Label(requestComposite, SWT.NONE);
 		requestHeadersField = new Text(requestComposite, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
 		GridData gd_requestHeadersField = new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1);
-		gd_requestHeadersField.heightHint = 100;
-		gd_requestHeadersField.minimumHeight = 100;
+		gd_requestHeadersField.heightHint = 50;
+		gd_requestHeadersField.minimumHeight = 50;
 		requestHeadersField.setLayoutData(gd_requestHeadersField);
 		new Label(requestComposite, SWT.NONE);
 
@@ -125,42 +125,39 @@ public class HttpResultView extends ViewPart {
 		GridLayout gl_responseComposite = new GridLayout(3, false);
 		gl_responseComposite.horizontalSpacing = 15;
 		responseComposite.setLayout(gl_responseComposite);
-		responseCodeField = new Text(responseComposite, SWT.BORDER);
-		responseCodeField.setText("200");
+		responseCodeField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
 		responseCodeField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-		responseCodeField.setEditable(false);
+		responseCodeField.setBackground(new Color(255, 255, 0)); // Default color
+		
+		
+		responseDurationField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
+		responseDurationField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 
-		responseDurationField = new Text(responseComposite, SWT.BORDER);
-		responseDurationField.setEditable(false);
-
-		responseSizeField = new Text(responseComposite, SWT.BORDER);
-		responseSizeField.setEditable(false);
+		responseSizeField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
 
 		responseHeadersLabel = new Label(responseComposite, SWT.NONE);
+		responseHeadersLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
 		responseHeadersLabel.setText("Headers:");
-		new Label(responseComposite, SWT.NONE);
-		new Label(responseComposite, SWT.NONE);
 		
 		responseHeadersTable = new Table(responseComposite, SWT.BORDER | SWT.FULL_SELECTION);
-		responseHeadersTable.setHeaderBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		responseHeadersTable.setHeaderBackground(Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_BACKGROUND));
 		responseHeadersTable.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-		responseHeadersTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
+		responseHeadersTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 3, 1));
 		responseHeadersTable.setHeaderVisible(true);
 		responseHeadersTable.setLinesVisible(true);
 		// Add columns: Name and Value
 		TableColumn nameColumn = new TableColumn(responseHeadersTable, SWT.LEFT);
-		nameColumn.setText("Name");
 		nameColumn.setWidth(150);
+		nameColumn.setText("Name");
 		TableColumn valueColumn = new TableColumn(responseHeadersTable, SWT.LEFT);
-		valueColumn.setText("Value");
 		valueColumn.setWidth(350);
+		valueColumn.setText("Value");
 
 		Label responseBodyLabel = new Label(responseComposite, SWT.NONE);
+		responseBodyLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
 		responseBodyLabel.setText("Body:");
 
 		responseTab.setControl(responseComposite);
-		new Label(responseComposite, SWT.NONE);
-		new Label(responseComposite, SWT.NONE);
 		responseBodyField = new Text(responseComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
 		responseBodyField.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
 		GridData gd_responseBodyField = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -211,24 +208,21 @@ public class HttpResultView extends ViewPart {
 		// Set background color using setBackground, but workaround for SWT Text bug
 		Display display = Display.getCurrent();
 		if (data.code >= 200 && data.code < 300) {
-			responseCodeField.setBackground(new Color(display, 123, 226, 46)); // Green
+			responseCodeField.setForeground(display.getSystemColor(SWT.COLOR_DARK_GREEN));
 		} else if (data.code >= 400) {
-			responseCodeField.setBackground(display.getSystemColor(SWT.COLOR_DARK_RED));
+			responseCodeField.setForeground(display.getSystemColor(SWT.COLOR_DARK_RED));
 		} else {
-			responseCodeField.setBackground(display.getSystemColor(SWT.COLOR_DARK_YELLOW));
+			responseCodeField.setForeground(display.getSystemColor(SWT.COLOR_DARK_YELLOW));
 		}
-		responseCodeField.redraw();
-		responseCodeField.update();
 		
 		responseDurationField.setText(data.duration + " ms");
 		responseSizeField.setText(data.size + "/TODO2 ko");
 		
 		
-		// Remove all items from the table before adding new ones
 		responseHeadersLabel.setText("Headers (" + data.headers.size() + ")");
+
+		// Remove all items from the table before adding new ones
 		responseHeadersTable.removeAll();
-		
-		// ajouter les headers triés par nom
 		data.headers.entrySet().stream()
     .sorted(Map.Entry.comparingByKey())
     .forEach(entry -> {
