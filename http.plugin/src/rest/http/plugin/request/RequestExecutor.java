@@ -28,7 +28,8 @@ public class RequestExecutor {
 	
 	public ResponseData execute(RequestData requestData) {
 		try {
-			
+      ResponseData result = new ResponseData();
+
 			String proxyHost = Activator.getDefault().getPreferenceStore().getString(HttpPreferencePage.SOCKS_PROXY_HOST_ID);
 			int proxyPort = Activator.getDefault().getPreferenceStore().getInt(HttpPreferencePage.SOCKS_PROXY_PORT_ID);
 			
@@ -38,10 +39,13 @@ public class RequestExecutor {
       URL url = requestData.url();
       HttpURLConnection connection;
       
-      boolean useProxy = true;
-      if (proxyHost == null || proxyHost.isEmpty() || proxyPort <= 0) useProxy = false; // Pas de proxy configuré
+      boolean useProxy = requestData.useProxy();
+      if (useProxy && (proxyHost == null || proxyHost.isEmpty() || proxyPort <= 0)) {
+      	useProxy = false; // Pas de proxy configuré
+      	result.metadata.put("proxy", "not configured");
+      }
       
-      if (requestData.useProxy()) {
+      if (useProxy) {
       	Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort));
 				connection = (HttpURLConnection) url.openConnection(proxy);
       } else {
@@ -70,8 +74,11 @@ public class RequestExecutor {
 			}
       
       // Http call
-      ResponseData result = new ResponseData();
+      long startTime = System.currentTimeMillis();
       result.code = connection.getResponseCode();
+      long endTime = System.currentTimeMillis();
+      result.duration = endTime - startTime;
+      
       for (int i = 1;; i++) {
         String headerKey = connection.getHeaderFieldKey(i);
         String headerValue = connection.getHeaderField(i);

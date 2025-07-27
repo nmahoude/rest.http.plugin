@@ -69,6 +69,7 @@ public class YacBlock {
 	  }
 
 	  extractMethodAndUrl(data, firstLine);
+	  
 	  if (!validRequest) {
 	  	error(data);
 	  	return;

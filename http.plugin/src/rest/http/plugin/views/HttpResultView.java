@@ -1,10 +1,13 @@
 package rest.http.plugin.views;
 
+import java.util.Map;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -13,6 +16,9 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.part.ViewPart;
 
@@ -32,13 +38,30 @@ public class HttpResultView extends ViewPart {
 	private Text requestHeadersField;
 	private Text requestBodyField;
 	private Text responseBodyField;
-	private Text responseHeadersField;
 	private Text responseCodeField;
 
 	private CTabFolder tabFolder;
 	private Button playButton;
 
 	private Button proxyCheckbox;
+	private Text responseDurationField;
+	private Text responseSizeField;
+
+	private final Image playImage;
+
+	private Label headersLabel;
+
+	private Label responseHeadersLabel;
+	private Table responseHeadersTable;
+
+	public HttpResultView() {
+		createResourceManager();
+		playImage = Activator.getDefault().getImageRegistry().get("play");
+	}
+	
+	
+	private void createResourceManager() {
+	}
 
 	@Override
 	public void createPartControl(Composite parent) {
@@ -48,35 +71,20 @@ public class HttpResultView extends ViewPart {
 		tabFolder.setSelectionBackground(Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT));
 		tabFolder.setSelectionForeground(Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_FOREGROUND));
 
-		
 		// Request Tab
 		CTabItem requestTab = new CTabItem(tabFolder, SWT.NONE);
 		requestTab.setText("Requête");
 		Composite requestComposite = new Composite(tabFolder, SWT.NONE);
+		requestTab.setControl(requestComposite);
 		requestComposite.setLayout(new GridLayout(3, false));
-
-		// Method dropdown
-		Label methodLabel = new Label(requestComposite, SWT.NONE);
-		methodLabel.setText("Method:");
 		methodCombo = new Combo(requestComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
-		methodCombo.setItems(new String[] {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"});
-		methodCombo.select(0); // Default to GET
-		methodCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		proxyCheckbox = new Button(requestComposite, SWT.CHECK);
-		proxyCheckbox.setText("Utiliser le proxy");
-		proxyCheckbox.setSelection(false); // Default unchecked
-		proxyCheckbox.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		// Empty label for grid alignment
-		new Label(requestComposite, SWT.NONE);
-
-		Label urlLabel = new Label(requestComposite, SWT.NONE);
-		urlLabel.setText("URL:");
+		methodCombo.setItems(new String[] { "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS" });
+		methodCombo.select(0);
 		urlField = new Text(requestComposite, SWT.BORDER);
 		urlField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		// Play button next to URL field
 		playButton = new Button(requestComposite, SWT.PUSH);
 		playButton.setToolTipText("Exécuter la requête");
-		Image playImage = Activator.getDefault().getImageRegistry().get("play");
 		playButton.setImage(playImage);
 		playButton.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -84,50 +92,83 @@ public class HttpResultView extends ViewPart {
 				executeRequest();
 			}
 		});
-		GridData playButtonData = new GridData(SWT.LEFT, SWT.CENTER, false, false);
-		playButton.setLayoutData(playButtonData);
+		proxyCheckbox = new Button(requestComposite, SWT.CHECK);
+		proxyCheckbox.setText("Utiliser le proxy");
+		proxyCheckbox.setSelection(false); // Default unchecked
+		proxyCheckbox.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+		new Label(requestComposite, SWT.NONE);
+		new Label(requestComposite, SWT.NONE);
 
-		Label headersLabel = new Label(requestComposite, SWT.NONE);
+		headersLabel = new Label(requestComposite, SWT.NONE);
 		headersLabel.setText("Headers:");
-		requestHeadersField = new Text(requestComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
-		requestHeadersField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
-		// Empty label for grid alignment
+		new Label(requestComposite, SWT.NONE);
+		new Label(requestComposite, SWT.NONE);
+		requestHeadersField = new Text(requestComposite, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+		GridData gd_requestHeadersField = new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1);
+		gd_requestHeadersField.heightHint = 100;
+		gd_requestHeadersField.minimumHeight = 100;
+		requestHeadersField.setLayoutData(gd_requestHeadersField);
 		new Label(requestComposite, SWT.NONE);
 
 		Label bodyLabel = new Label(requestComposite, SWT.NONE);
 		bodyLabel.setText("Body:");
-		requestBodyField = new Text(requestComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
-		requestBodyField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
-		// Empty label for grid alignment
 		new Label(requestComposite, SWT.NONE);
-
-		requestTab.setControl(requestComposite);
+		new Label(requestComposite, SWT.NONE);
+		requestBodyField = new Text(requestComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+		requestBodyField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
+		Image playImage = Activator.getDefault().getImageRegistry().get("play");
 
 		// Response Tab
 		CTabItem responseTab = new CTabItem(tabFolder, SWT.NONE);
 		responseTab.setText("Réponse");
 		Composite responseComposite = new Composite(tabFolder, SWT.NONE);
-		responseComposite.setLayout(new GridLayout(2, false));
-
-		Label codeLabel = new Label(responseComposite, SWT.NONE);
-		codeLabel.setText("Code HTTP:");
+		GridLayout gl_responseComposite = new GridLayout(3, false);
+		gl_responseComposite.horizontalSpacing = 15;
+		responseComposite.setLayout(gl_responseComposite);
 		responseCodeField = new Text(responseComposite, SWT.BORDER);
-		responseCodeField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		responseCodeField.setText("200");
+		responseCodeField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
 		responseCodeField.setEditable(false);
 
-		Label responseHeadersLabel = new Label(responseComposite, SWT.NONE);
+		responseDurationField = new Text(responseComposite, SWT.BORDER);
+		responseDurationField.setEditable(false);
+
+		responseSizeField = new Text(responseComposite, SWT.BORDER);
+		responseSizeField.setEditable(false);
+
+		responseHeadersLabel = new Label(responseComposite, SWT.NONE);
 		responseHeadersLabel.setText("Headers:");
-		responseHeadersField = new Text(responseComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
-		responseHeadersField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		responseHeadersField.setEditable(false);
+		new Label(responseComposite, SWT.NONE);
+		new Label(responseComposite, SWT.NONE);
+		
+		responseHeadersTable = new Table(responseComposite, SWT.BORDER | SWT.FULL_SELECTION);
+		responseHeadersTable.setHeaderBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		responseHeadersTable.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		responseHeadersTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
+		responseHeadersTable.setHeaderVisible(true);
+		responseHeadersTable.setLinesVisible(true);
+		// Add columns: Name and Value
+		TableColumn nameColumn = new TableColumn(responseHeadersTable, SWT.LEFT);
+		nameColumn.setText("Name");
+		nameColumn.setWidth(150);
+		TableColumn valueColumn = new TableColumn(responseHeadersTable, SWT.LEFT);
+		valueColumn.setText("Value");
+		valueColumn.setWidth(350);
 
 		Label responseBodyLabel = new Label(responseComposite, SWT.NONE);
 		responseBodyLabel.setText("Body:");
-		responseBodyField = new Text(responseComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
-		responseBodyField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		responseBodyField.setEditable(false);
 
 		responseTab.setControl(responseComposite);
+		new Label(responseComposite, SWT.NONE);
+		new Label(responseComposite, SWT.NONE);
+		responseBodyField = new Text(responseComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+		responseBodyField.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		GridData gd_responseBodyField = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gd_responseBodyField.horizontalSpan = 3;
+		responseBodyField.setLayoutData(gd_responseBodyField);
+		responseBodyField.setEditable(false);
+		
+		
 		tabFolder.setSelection(0);
 	}
 
@@ -140,9 +181,9 @@ public class HttpResultView extends ViewPart {
 	// Setters for updating fields
 	public void setRequest(RequestData requestData) {
 		this.currentRequest = requestData;
-		
+
 		proxyCheckbox.setSelection(!requestData.noProxy);
-		
+
 		if (methodCombo != null && !methodCombo.isDisposed()) {
 			int idx = methodCombo.indexOf(requestData.method);
 			methodCombo.select(idx >= 0 ? idx : 0);
@@ -162,35 +203,45 @@ public class HttpResultView extends ViewPart {
 			requestBodyField.setText(requestData.body);
 		}
 	}
-	
+
 	public void setResponse(ResponseData data) {
 		this.currentResponse = data;
 		
-		if (responseCodeField != null && !responseCodeField.isDisposed()) {
-			responseCodeField.setText("" + data.code);
-			if (data.code >= 200 && data.code < 300) {
-				responseCodeField.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
-			} else if (data.code >= 400) {
-				responseCodeField.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
-			} else {
-				responseCodeField.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
-			}
+		responseCodeField.setText("" + data.code);
+		// Set background color using setBackground, but workaround for SWT Text bug
+		Display display = Display.getCurrent();
+		if (data.code >= 200 && data.code < 300) {
+			responseCodeField.setBackground(new Color(display, 123, 226, 46)); // Green
+		} else if (data.code >= 400) {
+			responseCodeField.setBackground(display.getSystemColor(SWT.COLOR_DARK_RED));
+		} else {
+			responseCodeField.setBackground(display.getSystemColor(SWT.COLOR_DARK_YELLOW));
 		}
+		responseCodeField.redraw();
+		responseCodeField.update();
 		
-		if (responseHeadersField != null && !responseHeadersField.isDisposed()) {
-			StringBuilder headersBuilder = new StringBuilder();
-			data.headers.forEach((key, values) -> {
-				for (String value : values) {
-					headersBuilder.append(key).append(": ").append(value).append("\n");
-				}
-			});
-			responseHeadersField.setText(headersBuilder.toString().trim());
-		}
-
-		if (responseBodyField != null && !responseBodyField.isDisposed()) {
-			Object body = data.body;
-			responseBodyField.setText(body != null ? body.toString() : "");
-		}
+		responseDurationField.setText(data.duration + " ms");
+		responseSizeField.setText(data.size + "/TODO2 ko");
+		
+		
+		// Remove all items from the table before adding new ones
+		responseHeadersLabel.setText("Headers (" + data.headers.size() + ")");
+		responseHeadersTable.removeAll();
+		
+		// ajouter les headers triés par nom
+		data.headers.entrySet().stream()
+    .sorted(Map.Entry.comparingByKey())
+    .forEach(entry -> {
+        String key = entry.getKey();
+        for (String value : entry.getValue()) {
+            TableItem item = new TableItem(responseHeadersTable, SWT.NONE);
+            item.setText(new String[] { key, value });
+        }
+    });
+		responseHeadersTable.redraw();
+		
+		Object body = data.body;
+		responseBodyField.setText(body != null ? body.toString() : "");
 		
 		tabFolder.setSelection(1);
 	}
@@ -199,5 +250,5 @@ public class HttpResultView extends ViewPart {
 		RequestExecutor executor = new RequestExecutor();
 		var response = executor.execute(currentRequest);
 		setResponse(response);
-  }
+	}
 }
