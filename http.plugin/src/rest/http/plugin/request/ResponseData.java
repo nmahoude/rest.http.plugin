@@ -5,7 +5,18 @@ import java.util.List;
 import java.util.Map;
 
 public class ResponseData {
-
+	public static final ResponseData EMPTY = new ResponseData() {
+		{
+			code = -1;
+			duration = -1;
+			size = -1;
+			body = "";
+		}
+	};
+	
+	
+	
+	
 	public int code;
 	public long duration;
 	public int size;

@@ -177,6 +177,7 @@ public class HttpFileEditor extends TextEditor {
       view.setRequest(requestData);
       
       // Afficher un indicateur de chargement
+      view.resetResponse();
       view.setLoading(true);
       
       // Exécuter la requête dans un thread séparé

@@ -5,6 +5,11 @@ import java.util.Map;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -16,6 +21,8 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
@@ -127,17 +134,26 @@ public class HttpResultView extends ViewPart {
 		gl_responseComposite.horizontalSpacing = 15;
 		responseComposite.setLayout(gl_responseComposite);
 		responseCodeField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
-		responseCodeField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+		GridData gd_responseCodeField = new GridData(SWT.FILL, SWT.CENTER, false, false);
+		gd_responseCodeField.widthHint = 80;
+		responseCodeField.setLayoutData(gd_responseCodeField);
 		responseCodeField.setBackground(new Color(255, 255, 0)); // Default color
 		
 		
 		responseDurationField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
-		responseDurationField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		GridData gd_responseDurationField = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+		gd_responseDurationField.widthHint = 120;
+		responseDurationField.setLayoutData(gd_responseDurationField);
 
 		responseSizeField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
+		GridData gd_responseSizeField = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+		gd_responseSizeField.widthHint = 140;
+		responseSizeField.setLayoutData(gd_responseSizeField);
 
 		responseHeadersLabel = new Label(responseComposite, SWT.NONE);
-		responseHeadersLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+		GridData gd_responseHeadersLabel = new GridData(SWT.LEFT, SWT.CENTER, true, false, 3, 1);
+		gd_responseHeadersLabel.widthHint = 250;
+		responseHeadersLabel.setLayoutData(gd_responseHeadersLabel);
 		responseHeadersLabel.setText("Headers:");
 		
 		responseHeadersTable = new Table(responseComposite, SWT.BORDER | SWT.FULL_SELECTION);
@@ -154,6 +170,39 @@ public class HttpResultView extends ViewPart {
 		valueColumn.setWidth(350);
 		valueColumn.setText("Value");
 
+		// add contextueal menu to copy values
+		responseHeadersTable.addKeyListener(new KeyAdapter() {
+		
+	    @Override
+	    public void keyPressed(KeyEvent e) {
+	    	if ((e.stateMask & SWT.CTRL) != 0 && e.keyCode == 'c') {
+	    		copySelectedTableValue();
+	    	}
+	    }
+		});
+
+		// Add context menu for copy
+		Menu contextMenu = new Menu(responseHeadersTable);
+
+		MenuItem copyValueItem = new MenuItem(contextMenu, SWT.PUSH);
+		copyValueItem.setText("Copy value");
+		copyValueItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				copySelectedTableValue();
+			}
+		});
+
+		MenuItem copyNameAndValueItem = new MenuItem(contextMenu, SWT.PUSH);
+		copyNameAndValueItem.setText("Copy name : value");
+		copyNameAndValueItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				copySelectedTableNameAndValue();
+			}
+		});
+		responseHeadersTable.setMenu(contextMenu);
+		
 		Label responseBodyLabel = new Label(responseComposite, SWT.NONE);
 		responseBodyLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
 		responseBodyLabel.setText("Body:");
@@ -170,6 +219,36 @@ public class HttpResultView extends ViewPart {
 		tabFolder.setSelection(0);
 	}
 
+	private void copySelectedTableNameAndValue() {
+    TableItem[] selection = responseHeadersTable.getSelection();
+    if (selection.length == 0) return;
+    
+    StringBuilder sb = new StringBuilder();
+    for (TableItem item : selection) {
+        sb.append(item.getText(0)).append(": ").append(item.getText(1)).append("\n");
+    }
+    
+    Clipboard clipboard = new Clipboard(Display.getCurrent());
+    TextTransfer textTransfer = TextTransfer.getInstance();
+    clipboard.setContents(new Object[]{sb.toString().trim()}, new Transfer[]{textTransfer});
+    clipboard.dispose();
+	}
+	
+	private void copySelectedTableValue() {
+    TableItem[] selection = responseHeadersTable.getSelection();
+    if (selection.length == 0) return;
+    
+    StringBuilder sb = new StringBuilder();
+    for (TableItem item : selection) {
+        sb.append(item.getText(1)).append("\n");
+    }
+    
+    Clipboard clipboard = new Clipboard(Display.getCurrent());
+    TextTransfer textTransfer = TextTransfer.getInstance();
+    clipboard.setContents(new Object[]{sb.toString().trim()}, new Transfer[]{textTransfer});
+    clipboard.dispose();
+	}
+	
 	@Override
 	public void setFocus() {
 		// Focus on the first field in the selected tab
@@ -204,32 +283,40 @@ public class HttpResultView extends ViewPart {
 
 	public void setResponse(ResponseData data) {
 		this.currentResponse = data;
-		
+		updateResponseFields();
+	}
+
+	public void resetResponse() {
+		this.currentResponse = ResponseData.EMPTY;
+		updateResponseFields();
+	}
+	
+	private void updateResponseFields() {
 		// Masquer l'indicateur de chargement
 		if (loadingLabel != null && !loadingLabel.isDisposed()) {
 			loadingLabel.setVisible(false);
 		}
 		
-		responseCodeField.setText("" + data.code);
+		responseCodeField.setText("" + currentResponse.code);
 		// Set background color using setBackground, but workaround for SWT Text bug
 		Display display = Display.getCurrent();
-		if (data.code >= 200 && data.code < 300) {
+		if (currentResponse.code >= 200 && currentResponse.code < 300) {
 			responseCodeField.setForeground(display.getSystemColor(SWT.COLOR_DARK_GREEN));
-		} else if (data.code >= 400) {
+		} else if (currentResponse.code >= 400) {
 			responseCodeField.setForeground(display.getSystemColor(SWT.COLOR_DARK_RED));
 		} else {
 			responseCodeField.setForeground(display.getSystemColor(SWT.COLOR_DARK_YELLOW));
 		}
 		
-		responseDurationField.setText(data.duration + " ms");
-		responseSizeField.setText(data.size + "/TODO2 ko");
+		responseDurationField.setText(currentResponse.duration + " ms");
+		responseSizeField.setText(currentResponse.size + "/TODO2 ko");
 		
 		
-		responseHeadersLabel.setText("Headers (" + data.headers.size() + ")");
+		responseHeadersLabel.setText("Headers (" + currentResponse.headers.size() + ")");
 
 		// Remove all items from the table before adding new ones
 		responseHeadersTable.removeAll();
-		data.headers.entrySet().stream()
+		currentResponse.headers.entrySet().stream()
     .sorted(Map.Entry.comparingByKey())
     .forEach(entry -> {
         String key = entry.getKey();
@@ -240,11 +327,12 @@ public class HttpResultView extends ViewPart {
     });
 		responseHeadersTable.redraw();
 		
-		Object body = data.body;
+		Object body = currentResponse.body;
 		responseBodyField.setText(body != null ? body.toString() : "");
 		
 		tabFolder.setSelection(1);
 	}
+
 
 	public void setLoading(boolean loading) {
 		if (loading) {
