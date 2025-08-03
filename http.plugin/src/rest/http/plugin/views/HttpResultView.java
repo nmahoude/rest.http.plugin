@@ -53,6 +53,7 @@ public class HttpResultView extends ViewPart {
 	private Table responseHeadersTable;
 	private Text responseBodyField;
 
+	private Label loadingLabel;
 
 	public HttpResultView() {
 		createResourceManager();
@@ -204,6 +205,11 @@ public class HttpResultView extends ViewPart {
 	public void setResponse(ResponseData data) {
 		this.currentResponse = data;
 		
+		// Masquer l'indicateur de chargement
+		if (loadingLabel != null && !loadingLabel.isDisposed()) {
+			loadingLabel.setVisible(false);
+		}
+		
 		responseCodeField.setText("" + data.code);
 		// Set background color using setBackground, but workaround for SWT Text bug
 		Display display = Display.getCurrent();
@@ -240,9 +246,69 @@ public class HttpResultView extends ViewPart {
 		tabFolder.setSelection(1);
 	}
 
+	public void setLoading(boolean loading) {
+		if (loading) {
+			// Créer l'indicateur de chargement s'il n'existe pas
+			if (loadingLabel == null || loadingLabel.isDisposed()) {
+				// Trouver le composite de l'onglet réponse
+				CTabItem responseTab = tabFolder.getItem(1);
+				Composite responseComposite = (Composite) responseTab.getControl();
+				
+				loadingLabel = new Label(responseComposite, SWT.NONE);
+				loadingLabel.setText("Chargement en cours...");
+				loadingLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1));
+				loadingLabel.moveAbove(responseCodeField);
+				responseComposite.layout(true);
+			}
+			loadingLabel.setVisible(true);
+			
+			// Basculer vers l'onglet réponse
+			tabFolder.setSelection(1);
+		} else {
+			// Masquer l'indicateur de chargement
+			if (loadingLabel != null && !loadingLabel.isDisposed()) {
+				loadingLabel.setVisible(false);
+			}
+		}
+	}
+
+	public void setError(String errorMessage) {
+		// Masquer l'indicateur de chargement
+		setLoading(false);
+		
+		// Afficher l'erreur dans le champ de réponse
+		responseCodeField.setText("ERROR");
+		responseCodeField.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_RED));
+		responseDurationField.setText("N/A");
+		responseSizeField.setText("N/A");
+		responseHeadersTable.removeAll();
+		responseBodyField.setText("Erreur: " + errorMessage);
+		
+		// Basculer vers l'onglet réponse
+		tabFolder.setSelection(1);
+	}
+
 	private void executeRequest() {
-		RequestExecutor executor = new RequestExecutor();
-		var response = executor.execute(currentRequest);
-		setResponse(response);
+		// Afficher l'indicateur de chargement
+		setLoading(true);
+		
+		// Exécuter la requête dans un thread séparé
+		new Thread(() -> {
+			try {
+				RequestExecutor executor = new RequestExecutor();
+				var response = executor.execute(currentRequest);
+				
+				// Retourner sur le thread UI pour mettre à jour l'interface
+				Display.getDefault().asyncExec(() -> {
+					setResponse(response);
+				});
+				
+			} catch (Exception e) {
+				// Gérer les erreurs sur le thread UI
+				Display.getDefault().asyncExec(() -> {
+					setError(e.getMessage());
+				});
+			}
+		}).start();
 	}
 }

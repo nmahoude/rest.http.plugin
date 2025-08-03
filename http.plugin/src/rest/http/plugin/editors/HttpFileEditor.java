@@ -173,14 +173,34 @@ public class HttpFileEditor extends TextEditor {
 		    .getActivePage();
 
 		try {
-		    HttpResultView view = (HttpResultView) page.showView(HttpResultView.ID);
-		    view.setRequest(requestData);
-		    var responseData = new RequestExecutor().execute(requestData);
-		    view.setResponse(responseData);
-		    
-		} catch (PartInitException e) {
-		    e.printStackTrace();
-		}
+      HttpResultView view = (HttpResultView) page.showView(HttpResultView.ID);
+      view.setRequest(requestData);
+      
+      // Afficher un indicateur de chargement
+      view.setLoading(true);
+      
+      // Exécuter la requête dans un thread séparé
+      new Thread(() -> {
+          try {
+              var responseData = new RequestExecutor().execute(requestData);
+              
+              // Retourner sur le thread UI pour mettre à jour l'interface
+              PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
+                  view.setResponse(responseData);
+                  view.setLoading(false);
+              });
+              
+          } catch (Exception e) {
+              // Gérer les erreurs sur le thread UI
+              PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
+                  view.setError("Erreur lors de l'exécution: " + e.getMessage());
+                  view.setLoading(false);
+              });
+          }
+      }).start();
+		 } catch (PartInitException e) {
+       e.printStackTrace();
+   }  
 	}
 	
 	
