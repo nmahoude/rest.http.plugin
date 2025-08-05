@@ -32,7 +32,7 @@ public class YacBlock {
 	void init() {
 		variables.clear();
 		if (parent != null) variables.putAll(parent.variables); // add parent variables
-		variables.putAll(extractVariables()); // overload with ours
+		extractScopeVariables(); // overload with ours
 		
 		if (content == null || content== null || content.isEmpty()) {
 			error();
@@ -62,13 +62,19 @@ public class YacBlock {
 	  	return;
 	  }
 	  
-	  String firstLine = resolveVariables(lines[current]);
-	  if (firstLine.isEmpty()) {
-	  	error();
-	  	return;
-	  }
+	  String line = "";
+	  do {
+			line = resolveVariables(lines[current]);
+			
+			if (isUrl(line)) {
+				// On a trouvé un verbe HTTP, on sort de la boucle
+				break;
+			} else {
+				current++;
+			}
+	  } while(current < lines.length);
 
-	  extractMethodAndUrl(data, firstLine);
+	  extractMethodAndUrl(data, line);
 	  
 	  if (!validRequest) {
 	  	error(data);
@@ -79,7 +85,7 @@ public class YacBlock {
 	  
 	  Map<String, List<String>> headers = new java.util.HashMap<>();
 		for (; current < lines.length; ) {
-      String line = resolveVariables(lines[current++]);
+      line = resolveVariables(lines[current++]);
 			if (line.isEmpty()) {
 				break; // Skip empty lines and comments
 			}
@@ -95,10 +101,26 @@ public class YacBlock {
 	  
 	  StringBuilder body = new StringBuilder();
 	  for (; current < lines.length; current++) {
-      String line = resolveVariables(lines[current]);
+      line = resolveVariables(lines[current]);
       body.append(line).append("\n");
 	  }
 	  data.body = body.toString().trim();
+	}
+
+	private boolean isUrl(String line) {
+		if (line == null || line.isEmpty()) {
+			return false;
+		}
+		if (line.startsWith("http://") || line.startsWith("https://")) {
+			return true;
+		}
+		List<String> verbs = List.of("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS");
+		for (String verb : verbs) {
+			if (line.startsWith(verb + " ")) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private String resolveVariables(String content) {
@@ -160,9 +182,7 @@ public class YacBlock {
 		return validRequest;
 	}
 
-	public Map<String, String> extractVariables() {
-		Map<String, String> variables = new java.util.HashMap<>();
-		
+	public Map<String, String> extractScopeVariables() {
 		String[] lines = content.split("\\r?\\n");
 	  if (lines.length == 0) {
 	  	return Collections.emptyMap();
@@ -170,12 +190,12 @@ public class YacBlock {
 	  
 	  // Passer toutes les lignes en revue
 	  for (String line : lines) {
-	  	extractVariable(variables, line);
+	  	extractVariable(line);
 	  }
 	  return variables;
 	}
 
-	private void extractVariable(Map<String, String> variables, String line) {
+	private void extractVariable(String line) {
 		if (line.trim().startsWith("@")) {
 			// extract variable as yac format
 			String[] parts = line.trim().split("=", 2);
@@ -195,4 +215,5 @@ public class YacBlock {
 			}
 		}
 	}
+
 }

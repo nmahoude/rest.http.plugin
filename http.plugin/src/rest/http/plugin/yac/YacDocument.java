@@ -27,7 +27,7 @@ public class YacDocument {
 			}
 			
 			if (!block.isValidRequest() && block == parsedBlocks.get(0)) {
-				variables.putAll(block.extractVariables());
+				variables.putAll(block.extractScopeVariables());
 			}
 			if (block.isValidRequest()) {
 				blocks.add(block);
