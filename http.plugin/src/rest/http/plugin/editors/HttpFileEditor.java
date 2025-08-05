@@ -13,10 +13,12 @@ import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.source.Annotation;
 import org.eclipse.jface.text.source.CompositeRuler;
 import org.eclipse.jface.text.source.IAnnotationModel;
+import org.eclipse.jface.text.source.ISourceViewer;
+import org.eclipse.jface.text.source.IVerticalRuler;
 import org.eclipse.jface.text.source.IVerticalRulerInfo;
+import org.eclipse.jface.text.source.projection.ProjectionViewer;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
-import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.widgets.Composite;
@@ -49,10 +51,21 @@ public class HttpFileEditor extends TextEditor {
     setSourceViewerConfiguration(new HttpSourceViewerConfiguration());
 	}
 
+	public YacDocument yac() {
+		return yac;
+	}
+	
+	
 	@Override
 	protected void handleElementContentReplaced() {
 		super.handleElementContentReplaced();
 		
+	}
+	
+	@Override
+	protected ISourceViewer createSourceViewer(Composite parent, IVerticalRuler ruler, int styles) {
+		ProjectionViewer viewer = new ProjectionViewer(parent, ruler, getOverviewRuler(), isOverviewRulerVisible(), styles);
+    return viewer;
 	}
 	
 	@Override
@@ -61,13 +74,12 @@ public class HttpFileEditor extends TextEditor {
 
 		// set the font
 		getSourceViewer().getTextWidget().setFont(JFaceResources.getFont(HttpPreferencePage.FONT_ID));
+		getSourceViewer().getTextWidget().getShell().setData(yac); // référence au YacDocument
+		
 		JFaceResources.getFontRegistry().addListener(fontChangeListener);
 		
 		setRulerContextMenuId("httpRulerContext");
 
-		StyledText styledText = getSourceViewer().getTextWidget();
-		
-		
 		updateHttpAnnotations();
 		IDocument doc = getDocumentProvider().getDocument(getEditorInput());
     doc.addDocumentListener(new IDocumentListener() {

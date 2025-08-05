@@ -1,10 +1,7 @@
 package rest.http.plugin.editors;
 
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
-import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.presentation.IPresentationReconciler;
 import org.eclipse.jface.text.presentation.PresentationReconciler;
 import org.eclipse.jface.text.rules.DefaultDamagerRepairer;
@@ -40,17 +37,7 @@ public class HttpSourceViewerConfiguration extends SourceViewerConfiguration {
 	
 	@Override
 	public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType) {
-		return new ITextHover() {
-			@Override
-			public String getHoverInfo(ITextViewer viewer, IRegion region) {
-				return "TODO : retourner le verb + url réelle si on execute via request/httpblock";
-			}
-
-			@Override
-			public IRegion getHoverRegion(ITextViewer viewer, int offset) {
-				return new Region(offset, 1);
-			}
-		};
+	    return new HttpTextHover();
 	}
 
 }
