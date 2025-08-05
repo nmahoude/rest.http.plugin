@@ -43,7 +43,7 @@ public class HttpSourceViewerConfiguration extends SourceViewerConfiguration {
 		return new ITextHover() {
 			@Override
 			public String getHoverInfo(ITextViewer viewer, IRegion region) {
-				return "<a href='run'>Exécuter cette requête</a>";
+				return "TODO : retourner le verb + url réelle si on execute via request/httpblock";
 			}
 
 			@Override

@@ -16,6 +16,7 @@ import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.IVerticalRulerInfo;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.widgets.Composite;
@@ -64,6 +65,9 @@ public class HttpFileEditor extends TextEditor {
 		
 		setRulerContextMenuId("httpRulerContext");
 
+		StyledText styledText = getSourceViewer().getTextWidget();
+		
+		
 		updateHttpAnnotations();
 		IDocument doc = getDocumentProvider().getDocument(getEditorInput());
     doc.addDocumentListener(new IDocumentListener() {
@@ -97,8 +101,7 @@ public class HttpFileEditor extends TextEditor {
 									|| lineText.startsWith("POST") 
 									|| lineText.startsWith("DELETE") 
 									|| lineText.startsWith("PUT")) {
-								
-								
+
 								var result = yac.getAt(line);
 								
 								executeRequest(result);
@@ -135,6 +138,7 @@ public class HttpFileEditor extends TextEditor {
 				if (block.isValidRequest()) {
 						try {
 								int offset = document.getLineOffset(block.startingLine+block.verbLine);
+								
 								Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "[Executer]");
 								model.addAnnotation(annotation, new Position(offset, 0));
 						} catch (BadLocationException e) {
@@ -142,27 +146,6 @@ public class HttpFileEditor extends TextEditor {
 						}
 				}
 		}
-//    try {
-//        int lines = document.getNumberOfLines();
-//        for (int i = 0; i < lines; i++) {
-//            String lineText = document.get(document.getLineOffset(i), document.getLineLength(i)).trim();
-//            if (lineText.startsWith("GET") 
-//            		|| lineText.startsWith("POST") 
-//            		|| lineText.startsWith("DELETE") 
-//            		|| lineText.startsWith("PUT")
-//            		) {
-//                int offset = document.getLineOffset(i);
-//                //Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "Run HTTP request");
-//                
-//                Annotation annotation = new Annotation(HTTP_ANNOTATION, false, "[Executer]");
-//                offset = document.getLineOffset(i) + document.getLineLength(i) - 1;
-//                model.addAnnotation(annotation, new Position(offset, 0));
-//            }
-//        }
-//    } catch (BadLocationException e) {
-//      // TODO : better
-//  		e.printStackTrace();
-//    }
 	}
 	
 	public void executeRequest(RequestData requestData) {

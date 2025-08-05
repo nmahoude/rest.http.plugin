@@ -37,6 +37,7 @@ public class HttpScanner extends RuleBasedScanner {
 			IToken postMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(174, 206, 166)), SWT.BOLD));
 			IToken putMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(220, 191, 127)), SWT.BOLD));
 			IToken delMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(237, 168, 163)), SWT.BOLD));
+			IToken patchMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(163, 237, 211)), SWT.BOLD));
       
       
 			IToken methodToken = new Token(new TextAttribute(colorManager.getColor(new RGB(127, 0, 85)), null, SWT.BOLD));
@@ -77,10 +78,7 @@ public class HttpScanner extends RuleBasedScanner {
       wordRule.addWord("POST", postMethodToken);
       wordRule.addWord("PUT", putMethodToken);
       wordRule.addWord("DELETE", delMethodToken);
-      
-      for (String method : List.of("PATCH")) {
-          wordRule.addWord(method, methodToken);
-      }
+      wordRule.addWord("PATCH", patchMethodToken);
       
       rules.add(wordRule);
 
