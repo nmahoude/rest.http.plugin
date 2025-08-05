@@ -1,8 +1,10 @@
 package rest.http.plugin.editors;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.BadLocationException;
@@ -16,6 +18,9 @@ import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.IVerticalRuler;
 import org.eclipse.jface.text.source.IVerticalRulerInfo;
+import org.eclipse.jface.text.source.projection.ProjectionAnnotation;
+import org.eclipse.jface.text.source.projection.ProjectionAnnotationModel;
+import org.eclipse.jface.text.source.projection.ProjectionSupport;
 import org.eclipse.jface.text.source.projection.ProjectionViewer;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
@@ -45,6 +50,7 @@ public class HttpFileEditor extends TextEditor {
 	
 	private RequestData requestData = new RequestData();
 	private ResponseData responseData = new ResponseData();
+	private ProjectionAnnotationModel projectionAnnotationModel;
 	
 	public HttpFileEditor() {
     super();
@@ -65,8 +71,58 @@ public class HttpFileEditor extends TextEditor {
 	@Override
 	protected ISourceViewer createSourceViewer(Composite parent, IVerticalRuler ruler, int styles) {
 		ProjectionViewer viewer = new ProjectionViewer(parent, ruler, getOverviewRuler(), isOverviewRulerVisible(), styles);
-    return viewer;
+		return viewer;
 	}
+	
+	private void updateFoldingStructure() {
+    if (projectionAnnotationModel == null) return;
+
+    List<ProjectionAnnotation> annotations = new ArrayList<>();
+    Map<ProjectionAnnotation, Position> newAnnotations = new HashMap<>();
+
+    try {
+        IDocument doc = getSourceViewer().getDocument();
+        int lineCount = doc.getNumberOfLines();
+
+        for (int i = 0; i < lineCount; i++) {
+            String line = doc.get(doc.getLineOffset(i), doc.getLineLength(i)).trim();
+            if (line.startsWith("###{{")) { // Exemple de déclencheur de zone
+                int startOffset = doc.getLineOffset(i);
+                int endOffset = findEndOfFoldableBlock(doc, i);
+                int length = endOffset - startOffset;
+
+                ProjectionAnnotation annotation = new ProjectionAnnotation();
+                Position position = new Position(startOffset, length);
+                newAnnotations.put(annotation, position);
+            }
+        }
+
+        projectionAnnotationModel.replaceAnnotations(null, newAnnotations);
+
+    } catch (BadLocationException e) {
+        e.printStackTrace();
+    }
+	}
+	
+	private int findEndOfFoldableBlock(IDocument doc, int startLine) throws BadLocationException {
+	    int lineCount = doc.getNumberOfLines();
+	    int endLine = startLine + 1;
+	    boolean found = false;
+	    while (endLine < lineCount) {
+	        String line = doc.get(doc.getLineOffset(endLine), doc.getLineLength(endLine)).trim();
+	        if (line.startsWith("###}}")) {
+	        	found =true;
+	        	break; // Nouvelle section
+	        }
+	        endLine++;
+	    }
+	    if (found) {
+	    	return doc.getLineOffset(endLine);
+	    } else {
+	    	return doc.getLineOffset(lineCount-1);
+	    }
+	}
+	
 	
 	@Override
 	public void createPartControl(Composite parent) {
@@ -80,13 +136,29 @@ public class HttpFileEditor extends TextEditor {
 		
 		setRulerContextMenuId("httpRulerContext");
 
-		updateHttpAnnotations();
+		
+		// Active le support du pliage
+		ProjectionViewer viewer = (ProjectionViewer) getSourceViewer();
+    ProjectionSupport projectionSupport = new ProjectionSupport(viewer, getAnnotationAccess(), getSharedColors());
+    projectionSupport.install();
+    viewer.enableProjection();
+
+    // Mise en place du fournisseur de folding
+    projectionAnnotationModel = viewer.getProjectionAnnotationModel();
+
+    
+    
+    updateHttpAnnotations();
+    updateFoldingStructure();
+		
+		
 		IDocument doc = getDocumentProvider().getDocument(getEditorInput());
     doc.addDocumentListener(new IDocumentListener() {
         @Override
         public void documentChanged(DocumentEvent event) {
             yac.load(event.getDocument());
         		updateHttpAnnotations();
+        		updateFoldingStructure();
         }
 
         @Override
