@@ -19,12 +19,25 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 
+import rest.http.plugin.editors.syntaxcoloring.rules.VariableDefinedRule;
+import rest.http.plugin.editors.syntaxcoloring.rules.VariableUsedRule;
+
 public class HttpScanner extends RuleBasedScanner {
 
   private ColorManager colorManager;
 
 	public HttpScanner(ColorManager colorManager) {
       this.colorManager = colorManager;
+      
+      Token variableToken = new Token(new TextAttribute(new Color(Display.getCurrent(), 200, 0, 0)));
+      
+      
+      Color methodFrontColor = colorManager.getColor(new RGB(255, 255, 255));
+			IToken getMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(171, 149, 222)), SWT.BOLD));
+			IToken postMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(174, 206, 166)), SWT.BOLD));
+			IToken putMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(220, 191, 127)), SWT.BOLD));
+			IToken delMethodToken = new Token(new TextAttribute(methodFrontColor, colorManager.getColor(new RGB(237, 168, 163)), SWT.BOLD));
+      
       
 			IToken methodToken = new Token(new TextAttribute(colorManager.getColor(new RGB(127, 0, 85)), null, SWT.BOLD));
       IToken httpToken = new Token(new TextAttribute(colorManager.getColor(new RGB(50, 150, 50))));
@@ -60,15 +73,21 @@ public class HttpScanner extends RuleBasedScanner {
           }
       });
 
-      for (String method : List.of("GET", "POST", "PUT", "DELETE", "PATCH")) {
+      wordRule.addWord("GET", getMethodToken);
+      wordRule.addWord("POST", postMethodToken);
+      wordRule.addWord("PUT", putMethodToken);
+      wordRule.addWord("DELETE", delMethodToken);
+      
+      for (String method : List.of("PATCH")) {
           wordRule.addWord(method, methodToken);
       }
       
-      
-      
       rules.add(wordRule);
-      rulesForJson(rules);
+
+      rules.add(new VariableDefinedRule(variableToken)); // Règle pour les variables
+      rules.add(new VariableUsedRule(variableToken)); // Règle pour les variables utilisées
       
+      rulesForJson(rules);
       
       setRules(rules.toArray(new IRule[0]));
   }
