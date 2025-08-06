@@ -43,7 +43,7 @@ public class Activator extends AbstractUIPlugin {
 		super.start(context);
 		plugin = this;
 		
-		getImageRegistry().put("play", imageDescriptorFromPlugin(PLUGIN_ID, "icons/play.png"));
+		getImageRegistry().put("replay", imageDescriptorFromPlugin(PLUGIN_ID, "icons/replay.png"));
 		
 		IPreferenceStore store = getPreferenceStore();
     FontData[] fontData = PreferenceConverter.getFontDataArray(store, HttpPreferencePage.FONT_ID);

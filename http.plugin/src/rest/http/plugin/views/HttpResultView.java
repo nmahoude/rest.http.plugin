@@ -61,10 +61,11 @@ public class HttpResultView extends ViewPart {
 	private Text responseBodyField;
 
 	private Label loadingLabel;
+	private Button btnReload;
 
 	public HttpResultView() {
 		createResourceManager();
-		playImage = Activator.getDefault().getImageRegistry().get("play");
+		playImage = Activator.getDefault().getImageRegistry().get("replay");
 	}
 	
 	
@@ -124,13 +125,12 @@ public class HttpResultView extends ViewPart {
 		new Label(requestComposite, SWT.NONE);
 		requestBodyField = new Text(requestComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
 		requestBodyField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
-		Image playImage = Activator.getDefault().getImageRegistry().get("play");
-
+		requestBodyField.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
 		// Response Tab
 		CTabItem responseTab = new CTabItem(tabFolder, SWT.NONE);
 		responseTab.setText("Réponse");
 		Composite responseComposite = new Composite(tabFolder, SWT.NONE);
-		GridLayout gl_responseComposite = new GridLayout(3, false);
+		GridLayout gl_responseComposite = new GridLayout(4, false);
 		gl_responseComposite.horizontalSpacing = 15;
 		responseComposite.setLayout(gl_responseComposite);
 		responseCodeField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
@@ -144,14 +144,24 @@ public class HttpResultView extends ViewPart {
 		GridData gd_responseDurationField = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
 		gd_responseDurationField.widthHint = 120;
 		responseDurationField.setLayoutData(gd_responseDurationField);
-
-		responseSizeField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
-		GridData gd_responseSizeField = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
-		gd_responseSizeField.widthHint = 140;
-		responseSizeField.setLayoutData(gd_responseSizeField);
+		
+				responseSizeField = new Text(responseComposite, SWT.BORDER | SWT.READ_ONLY);
+				GridData gd_responseSizeField = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+				gd_responseSizeField.widthHint = 140;
+				responseSizeField.setLayoutData(gd_responseSizeField);
+		
+		btnReload = new Button(responseComposite, SWT.NONE);
+		btnReload.setToolTipText("Réexécuter la requête");
+		btnReload.setImage(playImage);
+		btnReload.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				executeRequest();
+			}
+		});
 
 		responseHeadersLabel = new Label(responseComposite, SWT.NONE);
-		GridData gd_responseHeadersLabel = new GridData(SWT.LEFT, SWT.CENTER, true, false, 3, 1);
+		GridData gd_responseHeadersLabel = new GridData(SWT.LEFT, SWT.CENTER, true, false, 4, 1);
 		gd_responseHeadersLabel.widthHint = 250;
 		responseHeadersLabel.setLayoutData(gd_responseHeadersLabel);
 		responseHeadersLabel.setText("Headers:");
@@ -159,7 +169,7 @@ public class HttpResultView extends ViewPart {
 		responseHeadersTable = new Table(responseComposite, SWT.BORDER | SWT.FULL_SELECTION);
 		responseHeadersTable.setHeaderBackground(Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_BACKGROUND));
 		responseHeadersTable.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-		responseHeadersTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 3, 1));
+		responseHeadersTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 4, 1));
 		responseHeadersTable.setHeaderVisible(true);
 		responseHeadersTable.setLinesVisible(true);
 		// Add columns: Name and Value
@@ -204,14 +214,14 @@ public class HttpResultView extends ViewPart {
 		responseHeadersTable.setMenu(contextMenu);
 		
 		Label responseBodyLabel = new Label(responseComposite, SWT.NONE);
-		responseBodyLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+		responseBodyLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 4, 1));
 		responseBodyLabel.setText("Body:");
 
 		responseTab.setControl(responseComposite);
 		responseBodyField = new Text(responseComposite, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
 		responseBodyField.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
 		GridData gd_responseBodyField = new GridData(SWT.FILL, SWT.FILL, true, true);
-		gd_responseBodyField.horizontalSpan = 3;
+		gd_responseBodyField.horizontalSpan = 4;
 		responseBodyField.setLayoutData(gd_responseBodyField);
 		responseBodyField.setEditable(false);
 		
@@ -344,7 +354,7 @@ public class HttpResultView extends ViewPart {
 				
 				loadingLabel = new Label(responseComposite, SWT.NONE);
 				loadingLabel.setText("Chargement en cours...");
-				loadingLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1));
+				loadingLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 4, 1));
 				loadingLabel.moveAbove(responseCodeField);
 				responseComposite.layout(true);
 			}
