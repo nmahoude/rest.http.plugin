@@ -45,7 +45,7 @@ public class HttpScanner extends RuleBasedScanner {
       IToken urlToken = new Token(new TextAttribute(colorManager.getColor(new RGB(42, 0, 1))));
 
       IToken commentToken = new Token(new TextAttribute(colorManager.getColor(new RGB(0, 99, 0)), null, SWT.ITALIC));
-      IToken separatorToken = new Token(new TextAttribute(colorManager.getColor(new RGB(255, 0, 255)), null, SWT.ITALIC));
+      IToken separatorToken = new Token(new TextAttribute(colorManager.getColor(new RGB(69, 00, 196)), null, SWT.ITALIC));
       
       List<IRule> rules = new ArrayList<>();
 

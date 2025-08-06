@@ -77,8 +77,18 @@ public class HttpFileEditor extends TextEditor {
 	private void updateFoldingStructure() {
     if (projectionAnnotationModel == null) return;
 
-    List<ProjectionAnnotation> annotations = new ArrayList<>();
     Map<ProjectionAnnotation, Position> newAnnotations = new HashMap<>();
+    
+    // Récupérer les anciennes annotations de projection
+    Map<Annotation, Position> oldAnnotations = new HashMap<>();
+    Iterator<Annotation> annotationIterator = projectionAnnotationModel.getAnnotationIterator();
+    while (annotationIterator.hasNext()) {
+        Annotation annotation = annotationIterator.next();
+        if (annotation instanceof ProjectionAnnotation) {
+            Position position = projectionAnnotationModel.getPosition(annotation);
+            oldAnnotations.put(annotation, position);
+        }
+    }
 
     try {
         IDocument doc = getSourceViewer().getDocument();
@@ -97,7 +107,8 @@ public class HttpFileEditor extends TextEditor {
             }
         }
 
-        projectionAnnotationModel.replaceAnnotations(null, newAnnotations);
+        // Remplacer les anciennes annotations par les nouvelles
+        projectionAnnotationModel.replaceAnnotations(oldAnnotations.keySet().toArray(new Annotation[0]), newAnnotations);
 
     } catch (BadLocationException e) {
         e.printStackTrace();
@@ -146,10 +157,8 @@ public class HttpFileEditor extends TextEditor {
     // Mise en place du fournisseur de folding
     projectionAnnotationModel = viewer.getProjectionAnnotationModel();
 
-    
-    
-    updateHttpAnnotations();
     updateFoldingStructure();
+    updateHttpAnnotations();
 		
 		
 		IDocument doc = getDocumentProvider().getDocument(getEditorInput());
@@ -157,8 +166,8 @@ public class HttpFileEditor extends TextEditor {
         @Override
         public void documentChanged(DocumentEvent event) {
             yac.load(event.getDocument());
+            updateFoldingStructure();
         		updateHttpAnnotations();
-        		updateFoldingStructure();
         }
 
         @Override
