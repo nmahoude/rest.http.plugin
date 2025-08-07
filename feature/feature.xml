@@ -9,8 +9,16 @@
       Plugin Eclipse pour exécuter des requêtes HTTP à partir de fichiers .http
    </description>
 
-   <plugin
-         id="rest.http.plugin"
-         version="0.0.0"/>
+
+    <requires>
+      <import plugin="org.eclipse.core.runtime" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.eclipse.jdt.core" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jdt.ui" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jface.text" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.ui"/>
+   </requires>
+
+   <plugin id="rest.http.plugin" version="0.0.0" unpack="false"/>
 
 </feature>

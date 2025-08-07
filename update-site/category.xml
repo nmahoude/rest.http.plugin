@@ -1,0 +1,6 @@
+<site>
+  <feature url="features/http.feature_1.0.0.qualifier.jar" id="http.feature" version="1.0.0.qualifier">
+    <category name="REST Tools"/>
+  </feature>
+  <category-def name="REST Tools" label="REST Tools"/>
+</site>
