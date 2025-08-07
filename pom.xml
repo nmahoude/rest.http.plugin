@@ -9,89 +9,106 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  
-  
+    <tycho.compiler.source>21</tycho.compiler.source>
+    <tycho.compiler.target>21</tycho.compiler.target>
+
     <tycho.version>4.0.12</tycho.version>
   </properties>
 
+  <modules>
+    <module>http.plugin</module>
+    <module>feature</module>
+    <module>update-site</module>
+  </modules>
 
   <build>
-  <pluginManagement>
-     <plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>target-platform-configuration</artifactId>
+          <version>${tycho.version}</version>
+          <configuration>
+            <resolver>p2</resolver>
+            <pomDependencies>consider</pomDependencies>
+            <ignoreTychoRepositories>true</ignoreTychoRepositories>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-p2-director-plugin</artifactId>
+          <version>${tycho.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <extensions>true</extensions>
+      </plugin>
+      <!--Enable the replacement of the SNAPSHOT version in the final product configuration-->
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-packaging-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <id>package-feature</id>
+            <configuration>
+              <finalName>
+                ${project.artifactId}_${unqualifiedVersion}.${buildQualifier}</finalName>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>target-platform-configuration</artifactId>
         <version>${tycho.version}</version>
         <configuration>
-          <resolver>p2</resolver>
-          <pomDependencies>consider</pomDependencies>
-          <ignoreTychoRepositories>true</ignoreTychoRepositories>
+          <target>
+            <file>target-platform.target</file>
+          </target>
+          <!-- Optional set the Java version you are using-->
+          <executionEnvironment>JavaSE-21</executionEnvironment>
+
+          <environments>
+            <environment>
+              <os>linux</os>
+              <ws>gtk</ws>
+              <arch>x86_64</arch>
+            </environment>
+            <environment>
+              <os>win32</os>
+              <ws>win32</ws>
+              <arch>x86_64</arch>
+            </environment>
+            <environment>
+              <os>macosx</os>
+              <ws>cocoa</ws>
+              <arch>x86_64</arch>
+            </environment>
+          </environments>
         </configuration>
       </plugin>
-      
-       <plugin>
-         <groupId>org.eclipse.tycho</groupId>
-         <artifactId>tycho-p2-director-plugin</artifactId>
-         <version>${tycho.version}</version>
-       </plugin>
-     </plugins>
-   </pluginManagement>
-  <plugins>
-   <plugin>
-    <groupId>org.eclipse.tycho</groupId>
-    <artifactId>tycho-maven-plugin</artifactId>
-    <version>${tycho.version}</version>
-    <extensions>true</extensions>
-   </plugin>
-   <!--Enable the replacement of the SNAPSHOT version in the final product configuration-->
-   <plugin>
-        <groupId>org.eclipse.tycho</groupId>
-            <artifactId>tycho-packaging-plugin</artifactId>
-             <version>${tycho.version}</version>
-             <executions>
-              <execution>
-                <phase>package</phase>
-                <id>package-feature</id>
-                    <configuration>
-                        <finalName>${project.artifactId}_${unqualifiedVersion}.${buildQualifier}</finalName>
-                    </configuration>
-            </execution>
-        </executions>
-    </plugin>
-    <plugin>
-    <groupId>org.eclipse.tycho</groupId>
-    <artifactId>target-platform-configuration</artifactId>
-    <version>${tycho.version}</version>
-    <configuration>
-    <target>
-      <file>target-platform.target</file>
-    </target>
-     <!-- Optional set the Java version you are using-->
-    <executionEnvironment>JavaSE-17</executionEnvironment>
-    
-     <environments>
-      <environment>
-       <os>linux</os>
-       <ws>gtk</ws>
-       <arch>x86_64</arch>
-      </environment>
-      <environment>
-       <os>win32</os>
-       <ws>win32</ws>
-       <arch>x86_64</arch>
-      </environment>
-      <environment>
-       <os>macosx</os>
-       <ws>cocoa</ws>
-       <arch>x86_64</arch>
-      </environment>
-     </environments>
-    </configuration>
-   </plugin>
-  </plugins>
- </build>
+    </plugins>
+  </build>
 
- <modules>
-  <module>http.plugin</module>
- </modules>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>tycho-releases</id>
+      <url>https://repo.eclipse.org/content/repositories/tycho-releases/</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <repositories>
+    <repository>
+      <id>eclipse</id>
+      <url>https://repo.eclipse.org/content/groups/releases/</url>
+    </repository>
+  </repositories>
 </project>

@@ -86,6 +86,8 @@ public class YacBlock {
 	  Map<String, List<String>> headers = new java.util.HashMap<>();
 		for (; current < lines.length; ) {
       line = resolveVariables(lines[current++]);
+      
+      if (isCommented(line)) continue;
 			if (line.isEmpty()) {
 				break; // Skip empty lines and comments
 			}
@@ -105,6 +107,13 @@ public class YacBlock {
       body.append(line).append("\n");
 	  }
 	  data.body = body.toString().trim();
+	}
+
+	private boolean isCommented(String line) {
+		if (line.startsWith("//") || line.startsWith("#")) {
+			return true;
+		} 
+		return false;
 	}
 
 	private boolean isUrl(String line) {

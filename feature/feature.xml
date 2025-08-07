@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="http.feature"
+      label="plugin http pour faire du REST"
+      version="1.0.0.qualifier"
+      provider-name="Mahoudeaux Nicolas">
+
+   <description>
+      Plugin Eclipse pour exécuter des requêtes HTTP à partir de fichiers .http
+   </description>
+
+   <plugin
+         id="rest.http.plugin"
+         version="0.0.0"/>
+
+</feature>
