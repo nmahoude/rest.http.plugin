@@ -49,7 +49,7 @@ public class HttpResultView extends ViewPart {
 	private Button playButton;
 	private Button proxyCheckbox;
 	private Label headersLabel;
-	private Text requestHeadersField;
+	private Table requestHeadersTable;
 	private Text requestBodyField;
 
 
@@ -113,11 +113,25 @@ public class HttpResultView extends ViewPart {
 		headersLabel.setText("Headers:");
 		new Label(requestComposite, SWT.NONE);
 		new Label(requestComposite, SWT.NONE);
-		requestHeadersField = new Text(requestComposite, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
 		GridData gd_requestHeadersField = new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1);
 		gd_requestHeadersField.heightHint = 50;
 		gd_requestHeadersField.minimumHeight = 50;
-		requestHeadersField.setLayoutData(gd_requestHeadersField);
+
+		requestHeadersTable = new Table(requestComposite, SWT.BORDER | SWT.FULL_SELECTION);
+		requestHeadersTable.setHeaderBackground(Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_BACKGROUND));
+		requestHeadersTable.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		requestHeadersTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 4, 1));
+		requestHeadersTable.setHeaderVisible(true);
+		requestHeadersTable.setLinesVisible(true);
+		// Add columns: Name and Value
+		TableColumn nameColumn = new TableColumn(requestHeadersTable, SWT.LEFT);
+		nameColumn.setWidth(150);
+		nameColumn.setText("Name");
+		TableColumn valueColumn = new TableColumn(requestHeadersTable, SWT.LEFT);
+		valueColumn.setWidth(350);
+		valueColumn.setText("Value");
+
+		
 		new Label(requestComposite, SWT.NONE);
 
 		Label bodyLabel = new Label(requestComposite, SWT.NONE);
@@ -174,12 +188,12 @@ public class HttpResultView extends ViewPart {
 		responseHeadersTable.setHeaderVisible(true);
 		responseHeadersTable.setLinesVisible(true);
 		// Add columns: Name and Value
-		TableColumn nameColumn = new TableColumn(responseHeadersTable, SWT.LEFT);
-		nameColumn.setWidth(150);
-		nameColumn.setText("Name");
-		TableColumn valueColumn = new TableColumn(responseHeadersTable, SWT.LEFT);
-		valueColumn.setWidth(350);
-		valueColumn.setText("Value");
+		TableColumn nameColumnReq = new TableColumn(responseHeadersTable, SWT.LEFT);
+		nameColumnReq.setWidth(150);
+		nameColumnReq.setText("Name");
+		TableColumn valueColumnReq = new TableColumn(responseHeadersTable, SWT.LEFT);
+		valueColumnReq.setWidth(350);
+		valueColumnReq.setText("Value");
 
 		// add contextueal menu to copy values
 		responseHeadersTable.addKeyListener(new KeyAdapter() {
@@ -278,14 +292,17 @@ public class HttpResultView extends ViewPart {
 		}
 		if (urlField != null && !urlField.isDisposed())
 			urlField.setText(requestData.url.toString());
-		if (requestHeadersField != null && !requestHeadersField.isDisposed()) {
-			StringBuilder headersBuilder = new StringBuilder();
-			requestData.headers.forEach((key, values) -> {
-				for (String value : values) {
-					headersBuilder.append(key).append(": ").append(value).append("\n");
-				}
-			});
-			requestHeadersField.setText(headersBuilder.toString().trim());
+		if (requestHeadersTable != null && !requestHeadersTable.isDisposed()) {
+			requestHeadersTable.removeAll();
+			requestData.headers.entrySet().stream()
+				.sorted(Map.Entry.comparingByKey())
+				.forEach(entry -> {
+						String key = entry.getKey();
+						for (String value : entry.getValue()) {
+								TableItem item = new TableItem(requestHeadersTable, SWT.NONE);
+								item.setText(new String[] { key, value });
+						}
+				});
 		}
 		if (requestBodyField != null && !requestBodyField.isDisposed()) {
 			requestBodyField.setText(requestData.body);
