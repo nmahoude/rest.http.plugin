@@ -358,21 +358,16 @@ public class HttpResultView extends ViewPart {
 				Composite responseComposite = (Composite) responseTab.getControl();
 				
 				loadingLabel = new Label(responseComposite, SWT.NONE);
-				loadingLabel.setText("Chargement en cours...");
-				loadingLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 4, 1));
+				loadingLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 6, 1));
 				loadingLabel.moveAbove(responseCodeField);
 				responseComposite.layout(true);
 			}
+			loadingLabel.setText("Chargement en cours...");
 			loadingLabel.setVisible(true);
-			
 			// Basculer vers l'onglet réponse
 			tabFolder.setSelection(1);
-		} else {
-			// Masquer l'indicateur de chargement
-			if (loadingLabel != null && !loadingLabel.isDisposed()) {
-				loadingLabel.setVisible(false);
-			}
 		}
+		
 	}
 
 	public void setError(String errorMessage) {
