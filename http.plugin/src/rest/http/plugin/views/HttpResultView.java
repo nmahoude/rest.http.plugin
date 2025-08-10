@@ -1,5 +1,6 @@
 package rest.http.plugin.views;
 
+import java.net.MalformedURLException;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
@@ -304,7 +305,11 @@ public class HttpResultView extends ViewPart {
 	private void updateResponseFields() {
 		// Masquer l'indicateur de chargement
 		if (loadingLabel != null && !loadingLabel.isDisposed()) {
-			loadingLabel.setVisible(false);
+			try {
+				loadingLabel.setText("target was <"+currentRequest.url().toString()+">");
+			} catch (MalformedURLException e) {
+				loadingLabel.setText("target was <N/A>");
+			}
 		}
 		
 		responseCodeField.setText("" + currentResponse.code);
@@ -318,8 +323,8 @@ public class HttpResultView extends ViewPart {
 			responseCodeField.setForeground(display.getSystemColor(SWT.COLOR_DARK_YELLOW));
 		}
 		
-		responseDurationField.setText(currentResponse.duration + " ms");
-		responseSizeField.setText(currentResponse.size + "/TODO2 ko");
+		responseDurationField.setText(currentResponse.duration());
+		responseSizeField.setText(currentResponse.size());
 		
 		
 		responseHeadersLabel.setText("Headers (" + currentResponse.headers.size() + ")");
